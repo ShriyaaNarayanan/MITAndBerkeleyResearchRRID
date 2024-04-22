@@ -7,4 +7,4 @@ requests_html==0.10.0
 streamlit==1.33.0
 lxml_html_clean
 st-gsheets-connection
-git+https://github.com/streamlit/gsheets-connection
+git+https://github.com/streamlit/gsheets-connection 
