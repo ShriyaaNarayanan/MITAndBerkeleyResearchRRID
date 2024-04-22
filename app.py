@@ -140,36 +140,10 @@ class basicAuthorInfoFromPubMed:
     async def returnNothing(self):
         print("")
         
-    
 
-    async def getAuthorNamesAndInfoInSpreadsheet(self):
-        await self.pubMedSearch()
-        # this is for populating a spreadsheet which can be finalized later once all information is collected
-        '''
-        self.namesAndInfo = self.getNamesAndInfo()
-        for name in namesAndDetails:
-            innerclass = name.find(class_ = "full-name")
-            stringName = innerclass["data-ga-label"]
-            if stringName in self.namesAndInfo:
-                if (self.namesAndInfo[stringName]):
-                    affiliationListInfo = self.namesAndInfo[stringName]
-                    affiliation = affiliationListInfo[0]
-                    if len(affiliationListInfo)>1:
-                        email = affiliationListInfo[1]
-                        sheet.append([stringName, affiliation, email])
-                    else:
-                        sheet.append([stringName, affiliation])
-            else:
-                pass
-            '''
-        print("These are the names: ", self.namesAndInfo)
-        #excel.save("Author Names And Info.xlsx")
+    # Here you can edit self.namesAndInfo to include the orcID, semantic Scholar ID, number of recent papers
+    # And updating the email when necessary
          
-    
-    
-    
-    
-        
 
 names = []
 affiliation = []
@@ -180,10 +154,10 @@ async def main():
     Officiallink = st.text_input('Enter your PubMedLink: ', "Link")
     g = basicAuthorInfoFromPubMed(Officiallink)
     print("Inside main")
-    if 'affiateData' not in st.session_state:
+    if 'affiliationData' not in st.session_state:
         if g.link !="Link":
             await g.pubMedSearch()
-            namesAndInfo = g.getNamesAndInfo()
+            namesAndInfo = g.getNamesAndInfo() 
             for name in namesAndInfo:
                 names.append(name)
                 if (namesAndInfo[name]):
@@ -199,22 +173,20 @@ async def main():
                     affiliation.append(None)
                     emails.append(None)
 
-            print(len(names))
-            print(len(affiliation))
-            print(len(emails))
             df = pd.DataFrame({
                 "Link": Officiallink,
                 "Authors" : names, 
                 "Affiliation" : affiliation,
                 "Emails                                   " : emails
+                # will need to update the data frame accordingly
 
             })
             # Setting value of session
-            if 'affiateData' not in st.session_state:
-                st.session_state['affiateData'] = df
+            if 'affiliationData' not in st.session_state:
+                st.session_state['affiliationData'] = df
             
-    if 'affiateData'  in st.session_state:
-        newDf = st.session_state['affiateData']
+    if 'affiliationData'  in st.session_state:
+        newDf = st.session_state['affiliationData']
 
         def dataframe_with_selections(newDf: pd.DataFrame, init_value: bool = False) -> pd.DataFrame:
             df_with_selections = newDf.copy()
@@ -243,6 +215,8 @@ async def main():
                 worksheet="Sheet1",
                 ttl="0m",
                 usecols=[0, 1, 2, 3],
+                # Number of columns will need to change based on what additional info
+                # Need to directly change the column names as well
             )
             df2.dropna(subset=['Authors'], inplace=True)
             newdf = df2.append(selection)
@@ -251,26 +225,17 @@ async def main():
                         data=newdf,
                     )
             placeholder.empty()
-            if 'affiateData' in st.session_state:
-                del st.session_state['affiateData']
+            if 'affiliationData' in st.session_state:
+                del st.session_state['affiliationData']
                 st.switch_page("app.py")
-                #st.rerun()
-                #selection.hide()
-                #newDf.hide()
-                #del newDf
-                #selection.drop(selection.index, inplace=True)
+                
         if st.button('RESET', type="primary"):
             # Reload the page and erase the current selection
             placeholder.empty()
             st.write("This was clicked!") 
-            if 'affiateData' in st.session_state:
-                del st.session_state['affiateData']
+            if 'affiliationData' in st.session_state:
+                del st.session_state['affiliationData']
                 st.switch_page("app.py")
-                #st.rerun()
-                #selection.hide()
-                #newDf.hide()
-                #del newDf
-                #selection.drop(selection.index, inplace=True)
 
 if __name__ == "__main__":
     asyncio.run(main())
