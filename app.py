@@ -227,7 +227,8 @@ async def main():
             placeholder.empty()
             if 'affiliationData' in st.session_state:
                 del st.session_state['affiliationData']
-                st.switch_page("app.py")
+                #st.switch_page("app.py")
+                st.rerun()
                 
         if st.button('RESET', type="primary"):
             # Reload the page and erase the current selection
@@ -235,7 +236,8 @@ async def main():
             st.write("This was clicked!") 
             if 'affiliationData' in st.session_state:
                 del st.session_state['affiliationData']
-                st.switch_page("app.py")
+                st.rerun()
+                #st.switch_page("app.py")
 
 if __name__ == "__main__":
     asyncio.run(main())
