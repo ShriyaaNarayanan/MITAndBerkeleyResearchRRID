@@ -209,7 +209,7 @@ async def main():
             st.write(selection)
         if (st.button('SAVE')):
             # Create database to have the rows in selection
-            st.write("This will be saved")
+            st.write("You have saved your selection!")
             conn = st.connection("gsheets", type=GSheetsConnection)
             df2 = conn.read(
                 worksheet="Sheet1",
@@ -233,11 +233,13 @@ async def main():
         if st.button('RESET', type="primary"):
             # Reload the page and erase the current selection
             placeholder.empty()
-            st.write("This was clicked!") 
+            st.write("Reset was clicked!") 
             if 'affiliationData' in st.session_state:
                 del st.session_state['affiliationData']
                 st.rerun()
                 #st.switch_page("app.py")
+        if st.button("View Google Sheets Link"):
+            st.write("(https://docs.google.com/spreadsheets/d/1kvdksFYHQtPQF0BZtAzcS6azYuUqpyiPS8u9a6iIrlw/edit?usp=sharing)")
 
 if __name__ == "__main__":
     asyncio.run(main())
