@@ -175,18 +175,18 @@ async def main():
                     emails.append(None)
             
             #Finding more emails and adding them to the dataframe of data
-            email_matches = master_email_finder(Officiallink, names)
+            # email_matches = master_email_finder(Officiallink, names)
 
-            if email_matches!="Error":
-                for idx,ele in enumerate(names):
-                    thing = [emails[idx]]
-                    thing = thing + email_matches[ele]
-                    emails[idx] = list(set(thing))
+            # if email_matches!="Error":
+            #     for idx,ele in enumerate(names):
+            #         thing = [emails[idx]]
+            #         thing = thing + email_matches[ele]
+            #         emails[idx] = list(set(thing))
                 
-                if "Nameless" in email_matches:
-                    names.append("Unmatched emails")
-                    affiliation.append("N/A")
-                    emails.append(email_matches['Nameless'])
+            #     # if "Nameless" in email_matches:
+            #     #     names.append("Unmatched emails")
+            #     #     affiliation.append("N/A")
+            #     #     emails.append(email_matches['Nameless'])
 
             df = pd.DataFrame({
                 "Link": Officiallink,
