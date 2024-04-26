@@ -136,7 +136,7 @@ class basicAuthorInfoFromPubMed:
                 self.namesAndInfo[name] = affiliation + [semantic_id, paper_count]
             else:
                 #print(name, None)
-                self.namesAndInfo[name] = [None, None, None]
+                self.namesAndInfo[name] = None
     
 
     
