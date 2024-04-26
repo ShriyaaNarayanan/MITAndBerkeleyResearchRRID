@@ -71,45 +71,39 @@ class basicAuthorInfoFromPubMed:
     
     # Asynchrnously returns a specific author's information: affiliation and email (If they exist) 
     # From a research article link
-    async def getSpecificAuthorNameInfo(self,link, name,session):
+    async def getSpecificAuthorNameInfo(self, link, name, session):
         async with session.get(link) as response:
             soup = BeautifulSoup(await response.text(), 'html.parser')
             place = soup.find(class_="authors-list")
             try:
-                namesAndDetails = place.find_all(class_ = "authors-list-item")
+                namesAndDetails = place.find_all(class_="authors-list-item")
                 for namer in namesAndDetails:
-                    innerclass = namer.find(class_ = "full-name")
-                    if (innerclass):
+                    innerclass = namer.find(class_="full-name")
+                    if innerclass:
                         stringName = innerclass.get("data-ga-label")
-                        if (stringName):
-                            if (stringName == name):
-                                affiliationClass = namer.find(class_="affiliation-links")
-                                if affiliationClass:
-                                    newAffiliationClass = affiliationClass.find(class_="affiliation-link")
-                                    affiliationListInfo1 = newAffiliationClass["title"]
-                                    email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', affiliationListInfo1)
-                                    if (email_match):
-                                        email = email_match.group()
-                                        oldAffiliation = affiliationListInfo1.replace(email, '').replace('title="', '').replace('"', '')
-                                        affiliation = oldAffiliation.rsplit(". ", 2)[0]
-                                    else:
-                                        affiliation = affiliationListInfo1.replace('title="', '').replace('"', '').strip()
-                                    if (email_match):
-                                        affiliationListInfo = [affiliation, email]
-                                    else:
-                                        affiliationListInfo = [affiliation, None]
-                                    namesAndInfo[stringName] = affiliationListInfo
+                        if stringName and stringName == name:
+                            affiliationClass = namer.find(class_="affiliation-links")
+                            if affiliationClass:
+                                newAffiliationClass = affiliationClass.find(class_="affiliation-link")
+                                affiliationListInfo1 = newAffiliationClass["title"]
+                                email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', affiliationListInfo1)
+                                if email_match:
+                                    email = email_match.group()
+                                    oldAffiliation = affiliationListInfo1.replace(email, '').replace('title="', '').replace('"', '')
+                                    affiliation = oldAffiliation.rsplit(". ", 2)[0] if oldAffiliation else None
                                 else:
-                                    namesAndInfo[stringName] = None
-                                try:
-                                    namesAndInfo[stringName] = affiliationListInfo
-                                    return affiliationListInfo
-                                except Exception as e:
-                                    return None
-                    else :
-                        print("did not find class full-name")
-            except:
+                                    email = None
+                                    affiliation = affiliationListInfo1.replace('title="', '').replace('"', '').strip() if affiliationListInfo1 else None
+
+                                affiliationListInfo = [affiliation, email]  # Ensure this is a list with complete strings
+                                self.namesAndInfo[stringName] = affiliationListInfo
+                            else:
+                                self.namesAndInfo[stringName] = [None, None]
+                            return self.namesAndInfo[stringName]
+            except Exception as e:
+                print(f"Error processing author details: {e}")
                 return None
+
 
     # Goes through all research paper links after searching up an author's name in PubMed
     # until it finds an affiliation
@@ -203,11 +197,12 @@ async def main():
             df = pd.DataFrame({
                 "Link": Officiallink,
                 "Authors": names, 
-                "Affiliation": affiliation,
-                "Emails": emails,
-                "Author ID": [info[2] for info in namesAndInfo.values() if info and len(info) > 2],
+                "Affiliation": [info[0] if info and len(info) > 0 else None for info in namesAndInfo.values()],
+                "Emails": [info[1] if info and len(info) > 1 else None for info in namesAndInfo.values()],
+                "Semantic ID": [info[2] for info in namesAndInfo.values() if info and len(info) > 2],
                 "Paper Count": [info[3] for info in namesAndInfo.values() if info and len(info) > 3]
             })
+
             # Setting value of session
             if 'affiliationData' not in st.session_state:
                 st.session_state['affiliationData'] = df
