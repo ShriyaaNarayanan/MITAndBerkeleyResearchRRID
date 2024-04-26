@@ -125,15 +125,15 @@ def master_email_finder(url, names):
     try:
         doi = get_pubmed_doi(url)
     except:
-        return("Error in getting the paper DOI")
+        return("Error")
     if not doi:
-        return("Failed to get paper DOI")
+        return("Error")
     try:
         emails = get_email_by_selenium(doi)
     except:
-        return("Error in retrieving emails from paper DOI site")
+        return("Error")
     if not emails:
-        return("No emails retrieved")
+        return("Error")
     #names = get_author_names(url)
     matches = name_to_email_matcher(emails, names)
     return(matches)
