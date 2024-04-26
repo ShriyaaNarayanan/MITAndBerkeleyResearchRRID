@@ -8,6 +8,7 @@ import requests, openpyxl
 from datetime import datetime
 import re
 from streamlit_gsheets import GSheetsConnection
+from email_finder import master_email_finder
 # pip install requests-html
 link = ""
 namesAndInfo = {}
@@ -172,6 +173,19 @@ async def main():
                 else:
                     affiliation.append(None)
                     emails.append(None)
+            
+            #Finding more emails and adding them to the dataframe of data
+            email_matches = master_email_finder(Officiallink, names)
+
+            for idx,ele in enumerate(names):
+                thing = list(emails[idx])
+                thing = thing + email_matches[ele]
+                emails[idx] = list(set(thing))
+            
+            if "Nameless" in email_matches:
+                names.append("Unmatched emails")
+                affiliation.append("N/A")
+                emails.append(email_matches['Nameless'])
 
             df = pd.DataFrame({
                 "Link": Officiallink,
