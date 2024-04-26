@@ -240,6 +240,7 @@ async def main():
             )
             df2.dropna(subset=['Authors'], inplace=True)
             newdf = df2.append(selection)
+            df2.drop(columns=["Emails"], inplace=True)
             df2 = conn.update(
                         worksheet="Sheet1",
                         data=newdf,
