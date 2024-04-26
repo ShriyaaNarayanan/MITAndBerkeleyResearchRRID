@@ -8,6 +8,7 @@ import requests, openpyxl
 from datetime import datetime
 import re
 from streamlit_gsheets import GSheetsConnection
+from orcidRetrieval import searchOrcid, orcidPubMed
 # pip install requests-html
 link = ""
 namesAndInfo = {}
@@ -22,6 +23,15 @@ currYear = int(datetime.now().strftime("%Y"))
 yearMinusTwo = currYear-2
 headers = {"x-api-key": "4BiGxN4Qtm989Br5PVykF71iYSZepRHk1tr7ycdA"}
 
+def get_orcid_id(name, affiliation, url):
+    orcid_id = orcidPubMed(url)
+    if orcid_id:
+        return orcid_id
+    else:
+        # Placeholder for searchOrcid logic, should be executed in a thread or asynchronously
+        searchOrcid(name, affiliation, similarity_threshold=0.7)
+        return None
+    
 def search_authors(author_name, headers):
     """
     Searches for the author by author name, and returns several information about that author due to 
@@ -170,6 +180,7 @@ class basicAuthorInfoFromPubMed:
 names = []
 affiliation = []
 emails = []
+orcid_ids = []
 st.title("PubMed Searching")
 st.write("Type in a pubMed link to a published article to retrieve the author affiliation!")
 async def main():
@@ -191,15 +202,18 @@ async def main():
                         emails.append(namesAndInfo[name][1])
                     else:
                         emails.append(None)
+                    orcid_ids.append(get_orcid_id(name, namesAndInfo[name][0], Officiallink))
                 else:
                     affiliation.append(None)
                     emails.append(None)
+                    orcid_ids.append(None)
 
             df = pd.DataFrame({
                 "Link": Officiallink,
                 "Authors": names, 
                 "Affiliation": affiliation,
                 "Emails": emails,
+                "ORCID ID": orcid_ids,
                 "Author ID": [info[2] for info in namesAndInfo.values()],
                 "Paper Count": [info[3] for info in namesAndInfo.values()]
             })
