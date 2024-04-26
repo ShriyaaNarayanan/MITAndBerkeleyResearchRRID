@@ -7,50 +7,50 @@ from selenium.webdriver.chrome.options import Options
 import pdfplumber
 from io import BytesIO
 
+# def get_pubmed_external_links(url):
+#     html_content = get_html(url)
+#     soup = BeautifulSoup(html_content, 'html.parser')
+#     link_list = soup.find('ul', class_='linkout-category-links')
+
+#     if link_list:
+#         links = link_list.find_all('a')
+#         hrefs = [link['href'] for link in links if 'href' in link.attrs]
+#         return hrefs
+#     else:
+#         return None
+
+# def get_email_from_page_html(url):
+#     html_content = get_html(url)
+#     soup = BeautifulSoup(html_content, 'html.parser')
+#     a_tags = soup.find_all('a', href=True)
+#     mailto_regex = re.compile(r'mailto:([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
+    
+#     unique_emails = set()
+
+#     for tag in a_tags:
+#         href = tag['href']
+#         match = mailto_regex.search(href)
+#         if match:
+#             unique_emails.add(match.group(1))
+
+#     return list(unique_emails)
+
+# def extract_text_from_pdf_url(url):
+#     # Send a GET request to fetch the PDF content from the URL
+#     response = requests.get(url)
+#     response.raise_for_status()  # This will raise an exception for bad responses
+
+#     # Use BytesIO to convert bytes to a file-like object which pdfplumber can read
+#     with pdfplumber.open(BytesIO(response.content)) as pdf:
+#         text = ""
+#         # Extract text from each page
+#         for page in pdf.pages:
+#             text += page.extract_text() + "\n"
+#     return
+
 def get_html(url):
     response = requests.get(url)
     return response.text
-
-def get_pubmed_external_links(url):
-    html_content = get_html(url)
-    soup = BeautifulSoup(html_content, 'html.parser')
-    link_list = soup.find('ul', class_='linkout-category-links')
-
-    if link_list:
-        links = link_list.find_all('a')
-        hrefs = [link['href'] for link in links if 'href' in link.attrs]
-        return hrefs
-    else:
-        return None
-
-def get_email_from_page_html(url):
-    html_content = get_html(url)
-    soup = BeautifulSoup(html_content, 'html.parser')
-    a_tags = soup.find_all('a', href=True)
-    mailto_regex = re.compile(r'mailto:([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
-    
-    unique_emails = set()
-
-    for tag in a_tags:
-        href = tag['href']
-        match = mailto_regex.search(href)
-        if match:
-            unique_emails.add(match.group(1))
-
-    return list(unique_emails)
-
-def extract_text_from_pdf_url(url):
-    # Send a GET request to fetch the PDF content from the URL
-    response = requests.get(url)
-    response.raise_for_status()  # This will raise an exception for bad responses
-
-    # Use BytesIO to convert bytes to a file-like object which pdfplumber can read
-    with pdfplumber.open(BytesIO(response.content)) as pdf:
-        text = ""
-        # Extract text from each page
-        for page in pdf.pages:
-            text += page.extract_text() + "\n"
-    return
 
 def get_author_names(url):
     names = []
@@ -123,19 +123,18 @@ def master(url):
     try:
         doi = get_pubmed_doi(url)
     except:
-        print("Error in getting the paper DOI")
+        return("Error in getting the paper DOI")
     if not doi:
-        print("Failed to get paper DOI")
+        return("Failed to get paper DOI")
     try:
         emails = get_email_by_selenium(doi)
     except:
-        print("Error in retrieving emails from paper DOI site")
+        return("Error in retrieving emails from paper DOI site")
     if not emails:
-        print("No emails retrieved")
+        return("No emails retrieved")
     names = get_author_names(url)
     matches = name_to_email_matcher(emails, names)
-    print(matches)
-    return
+    return(matches)
 
 
 url = "https://pubmed.ncbi.nlm.nih.gov/31922268/"
