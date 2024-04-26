@@ -43,7 +43,7 @@ def search_authors(author_name, headers):
 
 
 class basicAuthorInfoFromPubMed:
-@@ -49,66 +29,91 @@ def __init__(self, link):
+    def __init__(self, link):
         self.link = link
         self.namesAndInfo = {}
         self.headers = {"x-api-key": "4BiGxN4Qtm989Br5PVykF71iYSZepRHk1tr7ycdA"}
@@ -165,7 +165,7 @@ class basicAuthorInfoFromPubMed:
         async with session.get(search_url) as response:
             html = await response.text()
             affiliation = None
-@@ -127,29 +132,27 @@ async def fetch_affiliation(self, session, name, search_url, authorId, paperCoun
+    async def fetch_affiliation(self, session, name, search_url, authorId, paperCoun
                         break
 
             if affiliation is not None:
@@ -204,7 +204,7 @@ class basicAuthorInfoFromPubMed:
 
             results = await asyncio.gather(*search_tasks)
             return results
-@@ -165,49 +168,56 @@ async def returnNothing(self):
+async def returnNothing(self):
 names = []
 affiliation = []
 emails = []
@@ -278,7 +278,7 @@ async def main():
         newDf = st.session_state['affiliationData']
 
         def dataframe_with_selections(newDf: pd.DataFrame, init_value: bool = False) -> pd.DataFrame:
-@@ -226,43 +236,42 @@ def dataframe_with_selections(newDf: pd.DataFrame, init_value: bool = False) ->
+        def dataframe_with_selections(newDf: pd.DataFrame, init_value: bool = False) ->
         selection = dataframe_with_selections(newDf)
 
         placeholder = st.empty()
