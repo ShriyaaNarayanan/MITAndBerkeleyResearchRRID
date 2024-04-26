@@ -216,16 +216,20 @@ async def main():
                 #     affiliation.append("N/A")
                 #     emails.append(email_matches['Nameless'])
 
-            df = pd.DataFrame({
-                "Link": Officiallink,
-                "Authors" : names, 
-                "Affiliation" : affiliation,
-                "Emails                                   " : emails,
-                # will need to update the data frame accordingly
-                'Semantic ID': semantic_id,
-                'Paper Count': paper_count
+            data = []
+            for idx, name in enumerate(names):
+                entry = {
+                    "Link": Officiallink,
+                    "Authors": name,
+                    "Affiliation": affiliation[idx] if idx < len(affiliation) else None,
+                    "Emails": emails[idx] if idx < len(emails) else None,
+                    "Semantic ID": semantic_id[idx] if idx < len(semantic_id) else None,
+                    "Paper Count": paper_count[idx] if idx < len(paper_count) else None
+                }
+                data.append(entry)
 
-            })
+            # Now create the DataFrame
+            df = pd.DataFrame(data)
             # Setting value of session
             if 'affiliationData' not in st.session_state:
                 st.session_state['affiliationData'] = df
@@ -289,6 +293,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
