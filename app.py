@@ -264,6 +264,7 @@ async def main():
                 worksheet="Sheet1",
                 ttl="0m",
                 usecols=[0, 1, 2, 3, 4, 5],
+                # update columns here as necessary
             )
             df2.dropna(subset=['Authors'], inplace=True)
             
