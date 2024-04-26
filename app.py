@@ -260,20 +260,21 @@ async def main():
                 worksheet="Sheet1",
                 ttl="0m",
                 usecols=[0, 1, 2, 3],
-                # Number of columns will need to change based on what additional info
-                # Need to directly change the column names as well
             )
             df2.dropna(subset=['Authors'], inplace=True)
-            newdf = df2.append(selection)
+            
+            # Use concat instead of append
+            newdf = pd.concat([df2, selection], ignore_index=True)
+            
             df2 = conn.update(
-                        worksheet="Sheet1",
-                        data=newdf,
-                    )
+                worksheet="Sheet1",
+                data=newdf,
+            )
             placeholder.empty()
             if 'affiliationData' in st.session_state:
                 del st.session_state['affiliationData']
-                #st.switch_page("app.py")
                 st.rerun()
+
                 
         if st.button('RESET', type="primary"):
             # Reload the page and erase the current selection
@@ -288,4 +289,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
 
