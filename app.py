@@ -20,6 +20,26 @@ sheet.title = 'Authors and Basic Info from PubMed'
 sheet.append(['Author Name', 'Affiliation', 'Email'])
 currYear = int(datetime.now().strftime("%Y"))
 yearMinusTwo = currYear-2
+headers = {"x-api-key": "4BiGxN4Qtm989Br5PVykF71iYSZepRHk1tr7ycdA"}
+
+def search_authors(author_name, headers):
+    """
+    Searches for the author by author name, and returns several information about that author due to 
+    duplicate author names.
+    """
+    url = "https://api.semanticscholar.org/graph/v1/author/search"
+    params = {
+        "query": author_name,
+        "limit": 5,
+        "fields": "authorId,name,aliases,affiliations,homepage,paperCount,citationCount,hIndex"
+    }
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 200:
+        return response.json()['data']
+    else:
+        print(f"Error searching for authors: {response.status_code}")
+        return []
 
 
 class basicAuthorInfoFromPubMed:
@@ -112,10 +132,9 @@ class basicAuthorInfoFromPubMed:
                         break
 
             if affiliation is not None:
-                self.namesAndInfo[name] = affiliation
+                self.namesAndInfo[name] = affiliation + [authorId, paperCount]
             else:
-                #print(name, None)
-                self.namesAndInfo[name] = None
+                self.namesAndInfo[name] = [None, None, authorId, paperCount]
     
 
     
@@ -128,13 +147,16 @@ class basicAuthorInfoFromPubMed:
         search_tasks = []
         async with aiohttp.ClientSession() as session:
             for name in names:
+                semantic_scholar_info = search_authors(name, headers=self.headers)
+                if semantic_scholar_info:
+                    authorId = semantic_scholar_info[0]['authorId'] if 'authorId' in semantic_scholar_info[0] else None
+                    paperCount = semantic_scholar_info[0]['paperCount'] if 'paperCount' in semantic_scholar_info[0] else None
+                
                 first_and_last_list = name.split(" ")
-                search_url = "https://pubmed.ncbi.nlm.nih.gov/?term="+first_and_last_list[0]
-                for i in range(1, len(first_and_last_list)):
-                    search_url += "+" + first_and_last_list[i]
+                search_url = "https://pubmed.ncbi.nlm.nih.gov/?term=" + "+".join(first_and_last_list)
                 search_url += "&filter=years."+str(yearMinusTwo)+"-"+str(currYear)+"&sort=date"
-                search_tasks.append(asyncio.create_task(self.fetch_affiliation(session, name, search_url)))
-
+                search_tasks.append(asyncio.create_task(self.fetch_affiliation(session, name, search_url, authorId, paperCount)))
+    
             results = await asyncio.gather(*search_tasks)
             return results
     async def returnNothing(self):
@@ -175,11 +197,11 @@ async def main():
 
             df = pd.DataFrame({
                 "Link": Officiallink,
-                "Authors" : names, 
-                "Affiliation" : affiliation,
-                "Emails                                   " : emails
-                # will need to update the data frame accordingly
-
+                "Authors": names, 
+                "Affiliation": affiliation,
+                "Emails": emails,
+                "Author ID": [info[2] for info in namesAndInfo.values()],
+                "Paper Count": [info[3] for info in namesAndInfo.values()]
             })
             # Setting value of session
             if 'affiliationData' not in st.session_state:
