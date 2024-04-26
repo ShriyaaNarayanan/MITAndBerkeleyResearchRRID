@@ -209,7 +209,7 @@ async def main():
                     print(thing)
                     if ele in email_matches:
                         thing = thing + email_matches[ele]
-                    emails[idx] = list(set(thing))
+                    emails[idx] = list(set(thing))[0]
                 
                 # if "Nameless" in email_matches:
                 #     names.append("Unmatched emails")
