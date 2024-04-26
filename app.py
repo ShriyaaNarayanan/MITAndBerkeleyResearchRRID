@@ -29,10 +29,29 @@ class basicAuthorInfoFromPubMed:
     def __init__(self, link):
         self.link = link
         self.namesAndInfo = {}
-        
+        self.headers = {"x-api-key": "4BiGxN4Qtm989Br5PVykF71iYSZepRHk1tr7ycdA"}
+       
     # returns the main namesAndInfo dictionary
     def getNamesAndInfo(self):
         return self.namesAndInfo
+
+    def search_authors(self, author_name):
+        """
+        Searches for the author by author name, and returns several information about that author due to 
+        duplicate author names.
+        """
+        url = "https://api.semanticscholar.org/graph/v1/author/search"
+        params = {
+            "query": author_name,
+            "limit": 5,
+            "fields": "authorId,name,aliases,affiliations,homepage,paperCount,citationCount,hIndex"
+        }
+        response = requests.get(url, headers=self.headers, params=params)
+        if response.status_code == 200:
+            return response.json()['data']
+        else:
+            print(f"Error searching for authors: {response.status_code}")
+            return []
 
     # returns the author names from a given link
     def getAuthorNamesOnly(self):
@@ -40,13 +59,14 @@ class basicAuthorInfoFromPubMed:
         site = s.get(self.link)
         soup = BeautifulSoup(site.text, 'html.parser')
         place = soup.find(class_="authors-list")
-        namesAndDetails = place.find_all(class_ = "authors-list-item")
-        for name in namesAndDetails:
-            innerclass = name.find(class_ = "full-name")
-            if (innerclass):
-                stringName = innerclass.get("data-ga-label")
-                if stringName:
-                    names.append(stringName)
+        if place:
+            namesAndDetails = place.find_all(class_ = "authors-list-item")
+            for name in namesAndDetails:
+                innerclass = name.find(class_ = "full-name")
+                if (innerclass):
+                    stringName = innerclass.get("data-ga-label")
+                    if stringName:
+                        names.append(stringName)
         return names
     
     # Asynchrnously returns a specific author's information: affiliation and email (If they exist) 
@@ -94,7 +114,7 @@ class basicAuthorInfoFromPubMed:
     # Goes through all research paper links after searching up an author's name in PubMed
     # until it finds an affiliation
     # Or until there are no more research paper links       
-    async def fetch_affiliation(self, session, name, search_url):
+    async def fetch_affiliation(self, session, name, search_url, semantic_id, paper_count):
         async with session.get(search_url) as response:
             html = await response.text()
             affiliation = None
@@ -113,7 +133,7 @@ class basicAuthorInfoFromPubMed:
                         break
 
             if affiliation is not None:
-                self.namesAndInfo[name] = affiliation
+                self.namesAndInfo[name] = affiliation + [semantic_id, paper_count]
             else:
                 #print(name, None)
                 self.namesAndInfo[name] = None
@@ -121,20 +141,20 @@ class basicAuthorInfoFromPubMed:
 
     
     async def pubMedSearch(self):
-        
-        # This is the main function for performing a search on pubMed to retrieve all affiliations
-        # Given a specific research article link
-        # This function asynchronously gets all of the author's affiliations to have a faster runtime
         names = self.getAuthorNamesOnly()
         search_tasks = []
         async with aiohttp.ClientSession() as session:
             for name in names:
+                semantic_id = None
+                paper_count = None
+                semantic_scholar_info = self.search_authors(name)
+                if semantic_scholar_info:
+                    semantic_id = semantic_scholar_info[0]['authorId'] if 'authorId' in semantic_scholar_info[0] else None
+                    paper_count = semantic_scholar_info[0]['paperCount'] if 'paperCount' in semantic_scholar_info[0] else None
                 first_and_last_list = name.split(" ")
-                search_url = "https://pubmed.ncbi.nlm.nih.gov/?term="+first_and_last_list[0]
-                for i in range(1, len(first_and_last_list)):
-                    search_url += "+" + first_and_last_list[i]
-                search_url += "&filter=years."+str(yearMinusTwo)+"-"+str(currYear)+"&sort=date"
-                search_tasks.append(asyncio.create_task(self.fetch_affiliation(session, name, search_url)))
+                search_url = "https://pubmed.ncbi.nlm.nih.gov/?term=" + "+".join(first_and_last_list)
+                search_url += "&filter=years." + str(yearMinusTwo) + "-" + str(currYear) + "&sort=date"
+                search_tasks.append(asyncio.create_task(self.fetch_affiliation(session, name, search_url, semantic_id, paper_count)))
 
             results = await asyncio.gather(*search_tasks)
             return results
@@ -149,6 +169,8 @@ class basicAuthorInfoFromPubMed:
 names = []
 affiliation = []
 emails = []
+semantic_id = []
+paper_count = []
 st.title("PubMed Searching")
 st.write("Type in a pubMed link to a published article to retrieve the author affiliation!")
 async def main():
@@ -162,11 +184,15 @@ async def main():
             for name in namesAndInfo:
                 names.append(name)
                 if (namesAndInfo[name]):
-                    if (namesAndInfo[name][0] != None):
+                    if (namesAndInfo[name] and namesAndInfo[name][0]):
                         affiliation.append(namesAndInfo[name][0])
+                        semantic_id.append(namesAndInfo[name][2] if namesAndInfo[name][2] else None)
+                        paper_count.append(namesAndInfo[name][3] if namesAndInfo[name][3] else None)
                     else:
                         affiliation.append(None)
-                    if (namesAndInfo[name][0][1] != None):
+                        semantic_id.append(None)
+                        paper_count.append(None)
+                    if (namesAndInfo[name][0]):
                         emails.append(namesAndInfo[name][1])
                     else:
                         emails.append(None)
@@ -180,22 +206,30 @@ async def main():
             if email_matches!="Error":
                 for idx,ele in enumerate(names):
                     thing = [emails[idx]]
-                    thing = thing + email_matches[ele]
-                    emails[idx] = list(set(thing))
+                    print(thing)
+                    if ele in email_matches:
+                        thing = thing + email_matches[ele]
+                    emails[idx] = list(set(thing))[0]
                 
                 # if "Nameless" in email_matches:
                 #     names.append("Unmatched emails")
                 #     affiliation.append("N/A")
                 #     emails.append(email_matches['Nameless'])
 
-            df = pd.DataFrame({
-                "Link": Officiallink,
-                "Authors" : names, 
-                "Affiliation" : affiliation,
-                "Emails                                   " : emails
-                # will need to update the data frame accordingly
+            data = []
+            for idx, name in enumerate(names):
+                entry = {
+                    "Link": Officiallink,
+                    "Authors": name,
+                    "Affiliation": affiliation[idx] if idx < len(affiliation) else None,
+                    "Emails": emails[idx] if idx < len(emails) else None,
+                    "Semantic ID": semantic_id[idx] if idx < len(semantic_id) else None,
+                    "Paper Count": paper_count[idx] if idx < len(paper_count) else None
+                }
+                data.append(entry)
 
-            })
+            # Now create the DataFrame
+            df = pd.DataFrame(data)
             # Setting value of session
             if 'affiliationData' not in st.session_state:
                 st.session_state['affiliationData'] = df
@@ -230,20 +264,21 @@ async def main():
                 worksheet="Sheet1",
                 ttl="0m",
                 usecols=[0, 1, 2, 3],
-                # Number of columns will need to change based on what additional info
-                # Need to directly change the column names as well
             )
             df2.dropna(subset=['Authors'], inplace=True)
-            newdf = df2.append(selection)
+            
+            # Use concat instead of append
+            newdf = pd.concat([df2, selection], ignore_index=True)
+            
             df2 = conn.update(
-                        worksheet="Sheet1",
-                        data=newdf,
-                    )
+                worksheet="Sheet1",
+                data=newdf,
+            )
             placeholder.empty()
             if 'affiliationData' in st.session_state:
                 del st.session_state['affiliationData']
-                #st.switch_page("app.py")
                 st.rerun()
+
                 
         if st.button('RESET', type="primary"):
             # Reload the page and erase the current selection
@@ -258,7 +293,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
