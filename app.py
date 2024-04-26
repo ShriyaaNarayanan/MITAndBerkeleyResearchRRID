@@ -239,6 +239,8 @@ async def main():
                 usecols=[0, 1, 2, 3],
             )
             df2.dropna(subset=['Authors'], inplace=True)
+            if "Emails" in df2.columns:
+                df2.drop(columns=["Emails"], inplace=True)
             newdf = df2.append(selection)
             df2 = conn.update(
                         worksheet="Sheet1",
