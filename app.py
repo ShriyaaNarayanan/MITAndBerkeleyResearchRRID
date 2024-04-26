@@ -263,7 +263,7 @@ async def main():
             df2 = conn.read(
                 worksheet="Sheet1",
                 ttl="0m",
-                usecols=[0, 1, 2, 3],
+                usecols=[0, 1, 2, 3, 4, 5],
             )
             df2.dropna(subset=['Authors'], inplace=True)
             
