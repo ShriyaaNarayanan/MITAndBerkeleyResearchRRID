@@ -83,7 +83,7 @@ class basicAuthorInfoFromPubMed:
         for name in namesAndDetails:
             innerclass = name.find(class_ = "full-name")
             if (innerclass):
-            innerclass = name.find(class_="full-name")
+                innerclass = name.find(class_="full-name")
             if innerclass:
                 stringName = innerclass.get("data-ga-label")
                 if stringName:
