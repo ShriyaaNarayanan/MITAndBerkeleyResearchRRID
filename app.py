@@ -9,6 +9,8 @@ from datetime import datetime
 import re
 from streamlit_gsheets import GSheetsConnection
 from email_finder import master_email_finder
+from MITAndBerkeleyResearchRRID.orcidRetrieval import searchOrcid
+
 # pip install requests-html
 link = ""
 namesAndInfo = {}
@@ -34,6 +36,9 @@ class basicAuthorInfoFromPubMed:
     # returns the main namesAndInfo dictionary
     def getNamesAndInfo(self):
         return self.namesAndInfo
+
+    async def fetchORCID(self, name, affiliation):
+        return await searchOrcid(name, affiliation, self.link)
 
     def search_authors(self, author_name):
         """
@@ -133,7 +138,8 @@ class basicAuthorInfoFromPubMed:
                         break
 
             if affiliation is not None:
-                self.namesAndInfo[name] = affiliation + [semantic_id, paper_count]
+                orcid_id = await self.fetchORCID(name, affiliation[0])
+                self.namesAndInfo[name] = affiliation + [semantic_id, paper_count, orcid_id]
             else:
                 #print(name, None)
                 self.namesAndInfo[name] = None
@@ -171,6 +177,7 @@ affiliation = []
 emails = []
 semantic_id = []
 paper_count = []
+orcid_ids = []
 st.title("PubMed Searching")
 st.write("Type in a pubMed link to a published article to retrieve the author affiliation!")
 async def main():
@@ -188,10 +195,12 @@ async def main():
                         affiliation.append(namesAndInfo[name][0])
                         semantic_id.append(namesAndInfo[name][2] if namesAndInfo[name][2] else None)
                         paper_count.append(namesAndInfo[name][3] if namesAndInfo[name][3] else None)
+                        orcid_ids.append(namesAndInfo[name][4] if namesAndInfo[name][4] else None)
                     else:
                         affiliation.append(None)
                         semantic_id.append(None)
                         paper_count.append(None)
+                        orcid_ids.append(None)
                     if (namesAndInfo[name][0]):
                         emails.append(namesAndInfo[name][1])
                     else:
@@ -199,6 +208,7 @@ async def main():
                 else:
                     affiliation.append(None)
                     emails.append(None)
+                    orcid_ids.append(None) 
             
             #Finding more emails and adding them to the dataframe of data
             email_matches = master_email_finder(Officiallink, names)
@@ -224,7 +234,8 @@ async def main():
                     "Affiliation": affiliation[idx] if idx < len(affiliation) else None,
                     "Emails": emails[idx] if idx < len(emails) else None,
                     "Semantic ID": semantic_id[idx] if idx < len(semantic_id) else None,
-                    "Paper Count": paper_count[idx] if idx < len(paper_count) else None
+                    "Paper Count": paper_count[idx] if idx < len(paper_count) else None,
+                    "ORCID ID": orcid_ids[idx] if idx < len(orcid_ids) else None
                 }
                 data.append(entry)
 
@@ -263,7 +274,7 @@ async def main():
             df2 = conn.read(
                 worksheet="Sheet1",
                 ttl="0m",
-                usecols=[0, 1, 2, 3, 4, 5],
+                usecols=[0, 1, 2, 3, 4, 5, 6],
                 # update columns here as necessary
             )
             df2.dropna(subset=['Authors'], inplace=True)
