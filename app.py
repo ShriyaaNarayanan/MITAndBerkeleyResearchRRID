@@ -9,7 +9,7 @@ from datetime import datetime
 import re
 from streamlit_gsheets import GSheetsConnection
 from email_finder import master_email_finder
-from MITAndBerkeleyResearchRRID.orcidRetrieval import searchOrcid
+from orcidRetrieval import searchOrcid
 
 # pip install requests-html
 link = ""
